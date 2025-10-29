@@ -1,38 +1,5 @@
--- LocalScript to place in StarterPlayer > StarterPlayerScripts
--- Name: Last_Full (by حسن)
--- Combines: Orion GUI launcher + Last tools + TrueFly (BodyVelocity+BodyGyro) + Watch (player monitor) + Ping display
-
--- ====== Services / Setup ======
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
-local LP = Players.LocalPlayer
-
--- Wait for player gui
-local playerGui = LP:WaitForChild("PlayerGui")
-
--- ====== Orion GUI (loader) ======
-local OrionLib
-pcall(function()
-    OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/jensonhirst/Orion/main/source'))()
-end)
--- fallback: if Orion failed, create simple stub so buttons still work
-if not OrionLib then
-    OrionLib = {}
-    function OrionLib:MakeWindow(opts)
-        local win = {}
-        function win:MakeTab(tab) 
-            tab._buttons = {} 
-            function tab:AddButton(b) table.insert(tab._buttons, b) end
-            return tab
-        end
-        function win:MakeNotification(_) end
-        return win
-    end
-end
-
+-- ===== Orion Full GUI (with your pastebin) =====
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/jensonhirst/Orion/main/source'))()
 local Window = OrionLib:MakeWindow({
     Name = "لاست",
     HidePremium = false,
@@ -40,286 +7,265 @@ local Window = OrionLib:MakeWindow({
     ConfigFolder = "lastScripts"
 })
 
--- ====== Tab: سكربتاتي الصملة 🔥 ======
-local HotTab = Window:MakeTab({
+-- ===== تبويب سكربتاتي الصملة 🔥 =====
+local Tab = Window:MakeTab({
     Name = "سكربتاتي الصملة 🔥",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
-local function safeLoadURL(url)
-    pcall(function()
-        loadstring(game:HttpGet(url))()
-    end)
+local scriptsList = {
+    {"ALSHABA7 VOIID", 'https://raw.githubusercontent.com/XxAbood/ALSHABA7-VOIID/refs/heads/main/ALSHABA7%20VOIID'},
+    {"Auto Click", 'https://raw.githubusercontent.com/MADARA9223/AUTO-CLICK/refs/heads/main/MADARA%20AUTO%20CLICK'},
+    {"VR7", 'https://raw.githubusercontent.com/VR7ss/OMK/refs/heads/main/VR7-ON-TOP'},
+    {"HAMODAH", 'https://raw.githubusercontent.com/SALAH142876/HAMODAH_ON_TOP/refs/heads/main/Protected_7545697692462583.txt'},
+    {"AntiAFK", 'https://rawscripts.net/raw/Universal-Script-AntiAFK-v-AntiKick-V3-v-Kick-Attempt-Logger-27977'},
+    {"رحمه القمر 🌙", 'https://raw.githubusercontent.com/n0kc/AtomicHub/main/Map-Al-Biout.lua'}
+}
+
+for _,v in pairs(scriptsList) do
+    Tab:AddButton({
+        Name = "تشغيل "..v[1],
+        Callback = function()
+            pcall(function() loadstring(game:HttpGet(v[2]))() end)
+            OrionLib:MakeNotification({Name="تم التشغيل", Content=v[1].." شغال الآن", Image="rbxassetid://4483345998", Time=3})
+        end
+    })
 end
 
-HotTab:AddButton({ Name = "تشغيل ALSHABA7 VOIID", Callback = function()
-    safeLoadURL('https://raw.githubusercontent.com/XxAbood/ALSHABA7-VOIID/refs/heads/main/ALSHABA7%20VOIID')
-end })
-HotTab:AddButton({ Name = "تشغيل Auto Click", Callback = function()
-    safeLoadURL("https://raw.githubusercontent.com/MADARA9223/AUTO-CLICK/refs/heads/main/MADARA%20AUTO%20CLICK")
-end })
-HotTab:AddButton({ Name = "تشغيل VR7", Callback = function()
-    safeLoadURL("https://raw.githubusercontent.com/VR7ss/OMK/refs/heads/main/VR7-ON-TOP")
-end })
-HotTab:AddButton({ Name = "تشغيل HAMODAH", Callback = function()
-    safeLoadURL("https://raw.githubusercontent.com/SALAH142876/HAMODAH_ON_TOP/refs/heads/main/Protected_7545697692462583.txt")
-end })
-HotTab:AddButton({ Name = "تشغيل AntiAFK", Callback = function()
-    safeLoadURL("https://rawscripts.net/raw/Universal-Script-AntiAFK-v-AntiKick-V3-v-Kick-Attempt-Logger-27977")
-end })
-HotTab:AddButton({ Name = "تشغيل رحمه القمر 🌙", Callback = function()
-    safeLoadURL("https://raw.githubusercontent.com/n0kc/AtomicHub/main/Map-Al-Biout.lua")
-end })
+-- === ADDED: your pastebin script button ===
+Tab:AddButton({
+    Name = "تشغيل (pastebin zk61AmRh)",
+    Callback = function()
+        pcall(function()
+            loadstring(game:HttpGet("https://pastebin.com/raw/zk61AmRh"))()
+        end)
+        OrionLib:MakeNotification({Name="تم التشغيل", Content="pastebin zk61AmRh شغال", Image="rbxassetid://4483345998", Time=3})
+    end
+})
 
--- ====== Tab: لاست — أدوات ======
-local ToolsTab = Window:MakeTab({
+-- ===== تبويب لاست — أدوات =====
+local LastTab = Window:MakeTab({
     Name = "لاست — أدوات",
     Icon = "rbxassetid://6035027362",
     PremiumOnly = false
 })
 
--- State and helpers
-local state = {
-    antiafk = false,
-    reduceLag = false,
-    antiKickLocal = false,
-    autoMove = false,
-    autokeyActive = false,
-    repLagEnabled = false,
-    reachMultiplier = 1,
-    vanished = false
-}
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+
+local state = { antiafk=false, reduceLag=false, antiKickLocal=false, autoMove=false, autokeyActive=false, repLagEnabled=false, reachMultiplier=1, vanished=false }
 local savedParts = {}
 
+-- حفظ واسترجاع الشخصية
 local function saveCharacterState(char)
     savedParts = {}
     for _,v in pairs(char:GetDescendants()) do
-        if v:IsA("BasePart") then
-            savedParts[v] = {Transparency = v.Transparency, CanCollide = v.CanCollide}
-        elseif v:IsA("Decal") then
-            savedParts[v] = {Transparency = v.Transparency}
-        end
+        if v:IsA("BasePart") then savedParts[v]={Transparency=v.Transparency, CanCollide=v.CanCollide}
+        elseif v:IsA("Decal") then savedParts[v]={Transparency=v.Transparency} end
     end
 end
-
 local function restoreCharacter(char)
     for obj,props in pairs(savedParts) do
         pcall(function()
             if obj and obj.Parent then
-                if obj:IsA("BasePart") then
-                    obj.Transparency = props.Transparency or 0
-                    obj.CanCollide = (props.CanCollide == nil) and true or props.CanCollide
-                    if rawget(obj, "LocalTransparencyModifier") ~= nil then
-                        obj.LocalTransparencyModifier = 0
-                    end
-                elseif obj:IsA("Decal") then
-                    obj.Transparency = props.Transparency or 0
-                end
+                if obj:IsA("BasePart") then obj.Transparency=props.Transparency or 0; obj.CanCollide=(props.CanCollide==nil) and true or props.CanCollide; if rawget(obj,"LocalTransparencyModifier")~=nil then obj.LocalTransparencyModifier=0 end
+                elseif obj:IsA("Decal") then obj.Transparency=props.Transparency or 0 end
             end
         end)
     end
-    savedParts = {}
-    state.vanished = false
+    savedParts={}
+    state.vanished=false
 end
 
--- AntiAFK
+-- وظائف محلية
 local antiafkConn
 local function enableAntiafk()
     if state.antiafk then return end
-    state.antiafk = true
-    antiafkConn = RunService.Heartbeat:Connect(function()
-        local char = LP.Character
+    state.antiafk=true
+    antiafkConn=RunService.Heartbeat:Connect(function()
+        local char=LocalPlayer.Character
         if char and char.PrimaryPart then
-            pcall(function() char.PrimaryPart.CFrame = char.PrimaryPart.CFrame + Vector3.new(0, 0.03 * math.sin(tick()), 0) end)
+            pcall(function() char.PrimaryPart.CFrame=char.PrimaryPart.CFrame+Vector3.new(0,0.03*math.sin(tick()),0) end)
         end
     end)
+    OrionLib:MakeNotification({Name="AntiAFK", Content="تم تفعيل AntiAFK", Image="rbxassetid://4483345998", Time=3})
 end
-local function disableAntiafk()
-    state.antiafk = false
-    if antiafkConn then antiafkConn:Disconnect(); antiafkConn = nil end
-end
+local function disableAntiafk() state.antiafk=false; if antiafkConn then antiafkConn:Disconnect(); antiafkConn=nil end; OrionLib:MakeNotification({Name="AntiAFK", Content="تم إيقاف AntiAFK", Image="rbxassetid://4483345998", Time=3}) end
 
--- ReduceLag
 local function enableReduceLag()
     if state.reduceLag then return end
-    state.reduceLag = true
-    for _,v in pairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then
-            pcall(function() v.Enabled = false end)
-        end
+    state.reduceLag=true
+    for _,v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then pcall(function() v.Enabled=false end) end
     end
-    pcall(function() Lighting.GlobalShadows = false end)
+    pcall(function() Lighting.GlobalShadows=false end)
+    OrionLib:MakeNotification({Name="ReduceLag", Content="تم تقليل العناصر المزعجة", Image="rbxassetid://4483345998", Time=3})
 end
-local function disableReduceLag() state.reduceLag = false end
+local function disableReduceLag() state.reduceLag=false; OrionLib:MakeNotification({Name="ReduceLag", Content="تم إيقاف ReduceLag", Image="rbxassetid://4483345998", Time=3}) end
 
--- AntiKickLocal (soft vanish on idle)
 local function enableAntiKickLocal()
-    if state.antiKickLocal then return end
-    state.antiKickLocal = true
+    state.antiKickLocal=true
     Players.LocalPlayer.Idled:Connect(function()
-        if state.antiKickLocal and LP.Character then
-            saveCharacterState(LP.Character)
+        if state.antiKickLocal and LocalPlayer.Character then
+            saveCharacterState(LocalPlayer.Character)
             pcall(function()
-                for _,p in pairs(LP.Character:GetDescendants()) do
-                    if p:IsA("BasePart") then p.Transparency = 1; p.CanCollide = false end
-                    if p:IsA("Decal") then p.Transparency = 1 end
-                    if p:IsA("ParticleEmitter") or p:IsA("Trail") then p.Enabled = false end
+                for _,p in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if p:IsA("BasePart") then p.Transparency=1; p.CanCollide=false end
+                    if p:IsA("Decal") then p.Transparency=1 end
+                    if p:IsA("ParticleEmitter") or p:IsA("Trail") then p.Enabled=false end
                 end
             end)
             wait(2)
-            if LP.Character then restoreCharacter(LP.Character) end
+            if LocalPlayer.Character then restoreCharacter(LocalPlayer.Character) end
         end
     end)
+    OrionLib:MakeNotification({Name="AntiKickLocal", Content="حماية الطرد مفعلة", Image="rbxassetid://4483345998", Time=3})
 end
-local function disableAntiKickLocal() state.antiKickLocal = false end
+local function disableAntiKickLocal() state.antiKickLocal=false; OrionLib:MakeNotification({Name="AntiKickLocal", Content="حماية الطرد معطلة", Image="rbxassetid://4483345998", Time=3}) end
 
--- Lighting / misc
-local function brightnessNormal() pcall(function() Lighting.Brightness = 1 end) end
-local function brightnessNan() pcall(function() Lighting.Brightness = 0.01 end) end
-local function brightnessInf() pcall(function() Lighting.Brightness = 12 end) end
+local function brightnessNormal() pcall(function() Lighting.Brightness=1 end); OrionLib:MakeNotification({Name="Brightness", Content="Brightness = 1", Image="rbxassetid://4483345998", Time=2}) end
+local function brightnessNan() pcall(function() Lighting.Brightness=0.01 end); OrionLib:MakeNotification({Name="Brightness", Content="Brightness = 0.01", Image="rbxassetid://4483345998", Time=2}) end
+local function brightnessInf() pcall(function() Lighting.Brightness=12 end); OrionLib:MakeNotification({Name="Brightness", Content="Brightness = 12", Image="rbxassetid://4483345998", Time=2}) end
 
-local guiWhitelist = {"Map","HUD","hud","Minimap","MapUI","Brainrot","Menu"}
+local guiWhitelist={"Map","HUD","hud","Minimap","MapUI","Brainrot","Menu"}
 local function isWhitelisted(g)
     if not g or not g.Name then return false end
-    for _,kw in ipairs(guiWhitelist) do
-        if string.find(g.Name, kw) then return true end
-    end
+    for _,kw in ipairs(guiWhitelist) do if string.find(g.Name,kw) then return true end end
     return false
 end
 local function nogui()
-    for _,g in pairs(playerGui:GetChildren()) do
-        if g:IsA("ScreenGui") and not isWhitelisted(g) then
-            pcall(function() g.Enabled = false end)
-        end
+    for _,g in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+        if g:IsA("ScreenGui") and not isWhitelisted(g) then pcall(function() g.Enabled=false end) end
     end
+    OrionLib:MakeNotification({Name="NoGUI", Content="تم إخفاء الواجهات", Image="rbxassetid://4483345998", Time=2})
 end
 
-local function setfpscap(val)
-    pcall(function()
-        if typeof(settings) == "function" and settings().Physics then
-            settings().Physics.ForceFPS = tonumber(val) or 30
-        end
-    end)
-end
+local function setfpscap(val) pcall(function() if typeof(settings)=="function" then settings().Physics.ForceFPS=tonumber(val) or 30 end end); OrionLib:MakeNotification({Name="FPS Cap", Content="تم ضبط FPS Cap", Image="rbxassetid://4483345998", Time=2}) end
 
 local repLagThread
 local function enableReplicationLag(ms)
     if state.repLagEnabled then return end
-    state.repLagEnabled = true
-    repLagThread = spawn(function()
-        while state.repLagEnabled do
-            wait((tonumber(ms) or 80)/1000)
-        end
-    end)
+    state.repLagEnabled=true
+    repLagThread=spawn(function() while state.repLagEnabled do wait((tonumber(ms) or 80)/1000) end end)
+    OrionLib:MakeNotification({Name="RepLag", Content="Replication lag مفعل", Image="rbxassetid://4483345998", Time=2})
 end
-local function disableReplicationLag() state.repLagEnabled = false; repLagThread = nil end
+local function disableReplicationLag() state.repLagEnabled=false; repLagThread=nil; OrionLib:MakeNotification({Name="RepLag", Content="Replication lag معطل", Image="rbxassetid://4483345998", Time=2}) end
 
 local function cpuReduce()
-    for _,v in pairs(workspace:GetDescendants()) do
+    for _,v in pairs(Workspace:GetDescendants()) do
         pcall(function()
-            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then v.Enabled = false end
-            if v:IsA("Decal") then v.Transparency = math.max(v.Transparency or 0, 0.5) end
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then v.Enabled=false end
+            if v:IsA("Decal") then v.Transparency=math.max(v.Transparency or 0,0.5) end
         end)
     end
-    pcall(function() Lighting.GlobalShadows = false end)
+    pcall(function() Lighting.GlobalShadows=false end)
+    OrionLib:MakeNotification({Name="CPU Reduce", Content="تم تقليل حمل الـ CPU", Image="rbxassetid://4483345998", Time=2})
 end
 
-local function setDay() pcall(function() Lighting.TimeOfDay = "14:00:00" end) end
-local function nofog(val) pcall(function() Lighting.FogEnd = tonumber(val) or 0.1 end) end
+local function setDay() pcall(function() Lighting.TimeOfDay="14:00:00" end); OrionLib:MakeNotification({Name="Day", Content="تم ضبط الوقت", Image="rbxassetid://4483345998", Time=2}) end
+local function nofog(val) pcall(function() Lighting.FogEnd=tonumber(val) or 0.1 end); OrionLib:MakeNotification({Name="NoFog", Content="تم ضبط NoFog", Image="rbxassetid://4483345998", Time=2}) end
 local function antilag()
     pcall(function()
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 10000
-        for _,v in pairs(workspace:GetDescendants()) do
-            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then v.Enabled = false end
-            if v:IsA("Decal") then v.Transparency = math.max(v.Transparency or 0, 0.5) end
+        Lighting.GlobalShadows=false
+        Lighting.FogEnd=10000
+        for _,v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then v.Enabled=false end
+            if v:IsA("Decal") then v.Transparency=math.max(v.Transparency or 0,0.5) end
         end
     end)
+    OrionLib:MakeNotification({Name="AntiLag", Content="تم تفعيل AntiLag", Image="rbxassetid://4483345998", Time=2})
 end
 
 local function setReach(mult)
-    local char = LP.Character
+    local char=LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
-        pcall(function() char.HumanoidRootPart.Size = Vector3.new(2*(mult or 1), 2*(mult or 1), 1) end)
-        state.reachMultiplier = mult or 1
+        pcall(function() char.HumanoidRootPart.Size=Vector3.new(2*(mult or 1),2*(mult or 1),1) end)
+        state.reachMultiplier=mult or 1
+        OrionLib:MakeNotification({Name="Reach", Content="Reach x"..tostring(mult), Image="rbxassetid://4483345998", Time=2})
     end
 end
 
 local function autokey_w(times)
     if state.autokeyActive then return end
-    state.autokeyActive = true
+    state.autokeyActive=true
     spawn(function()
-        local t = tonumber(times) or 26
+        local t=tonumber(times) or 26
         for i=1,t do
-            local char = LP.Character
+            local char=LocalPlayer.Character
             if char then
-                local humanoid = char:FindFirstChildOfClass("Humanoid")
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local cam = workspace.CurrentCamera
+                local humanoid=char:FindFirstChildOfClass("Humanoid")
+                local hrp=char:FindFirstChild("HumanoidRootPart")
+                local cam=workspace.CurrentCamera
                 if humanoid and hrp and cam then
-                    local dir = cam.CFrame.LookVector
-                    local horiz = Vector3.new(dir.X,0,dir.Z)
-                    if horiz.Magnitude > 0 then
-                        local target = hrp.Position + horiz.Unit*4
-                        pcall(function() humanoid:MoveTo(Vector3.new(target.X, hrp.Position.Y, target.Z)) end)
+                    local dir=cam.CFrame.LookVector
+                    local horiz=Vector3.new(dir.X,0,dir.Z)
+                    if horiz.Magnitude>0 then
+                        local target=hrp.Position+horiz.Unit*4
+                        pcall(function() humanoid:MoveTo(Vector3.new(target.X,hrp.Position.Y,target.Z)) end)
                     end
                 end
             end
             wait(0.12)
         end
-        state.autokeyActive = false
+        state.autokeyActive=false
+        OrionLib:MakeNotification({Name="Autokey", Content="انتهى Autokey", Image="rbxassetid://4483345998", Time=2})
     end)
 end
 
 local autoMoveThread
 local function startAutoMove()
     if state.autoMove then return end
-    state.autoMove = true
-    autoMoveThread = spawn(function()
+    state.autoMove=true
+    autoMoveThread=spawn(function()
         while state.autoMove do
-            local char = LP.Character
+            local char=LocalPlayer.Character
             if char and char.PrimaryPart then
-                local humanoid = char:FindFirstChildOfClass("Humanoid")
-                local hrp = char.PrimaryPart
-                local cam = workspace.CurrentCamera
+                local humanoid=char:FindFirstChildOfClass("Humanoid")
+                local hrp=char.PrimaryPart
+                local cam=workspace.CurrentCamera
                 if humanoid and hrp and cam then
-                    local dir = cam.CFrame.LookVector
-                    local horiz = Vector3.new(dir.X,0,dir.Z)
-                    if horiz.Magnitude > 0 then
-                        local target = hrp.Position + horiz.Unit*6
-                        pcall(function() humanoid:MoveTo(Vector3.new(target.X, hrp.Position.Y, target.Z)) end)
+                    local dir=cam.CFrame.LookVector
+                    local horiz=Vector3.new(dir.X,0,dir.Z)
+                    if horiz.Magnitude>0 then
+                        local target=hrp.Position+horiz.Unit*6
+                        pcall(function() humanoid:MoveTo(Vector3.new(target.X,hrp.Position.Y,target.Z)) end)
                     end
                 end
             end
             wait(0.2)
         end
     end)
+    OrionLib:MakeNotification({Name="AutoMove", Content="تحرك تلقائي مفعل", Image="rbxassetid://4483345998", Time=2})
 end
-local function stopAutoMove() state.autoMove = false; autoMoveThread = nil end
+local function stopAutoMove() state.autoMove=false; autoMoveThread=nil; OrionLib:MakeNotification({Name="AutoMove", Content="تحرك تلقائي متوقف", Image="rbxassetid://4483345998", Time=2}) end
 
 local function jumpAndVanish(duration)
-    duration = tonumber(duration) or 6
-    local char = LP.Character
+    duration=tonumber(duration) or 6
+    local char=LocalPlayer.Character
     if not char then return end
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if humanoid then pcall(function() humanoid.Jump = true end) end
+    local humanoid=char:FindFirstChildOfClass("Humanoid")
+    if humanoid then pcall(function() humanoid.Jump=true end) end
     wait(0.12)
     saveCharacterState(char)
     for _,v in pairs(char:GetDescendants()) do
         pcall(function()
-            if v:IsA("BasePart") then v.Transparency = 1; v.CanCollide = false end
-            if v:IsA("Decal") then v.Transparency = 1 end
-            if v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
+            if v:IsA("BasePart") then v.Transparency=1; v.CanCollide=false end
+            if v:IsA("Decal") then v.Transparency=1 end
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled=false end
         end)
     end
-    state.vanished = true
-    spawn(function() wait(duration) if LP.Character then restoreCharacter(LP.Character) end end)
+    state.vanished=true
+    OrionLib:MakeNotification({Name="Vanish", Content="تم الاختفاء مؤقتاً", Image="rbxassetid://4483345998", Time=2})
+    spawn(function() wait(duration) if LocalPlayer.Character then restoreCharacter(LocalPlayer.Character) end end)
 end
 
--- Add tool buttons to ToolsTab
-local function addButton(name, fn)
-    ToolsTab:AddButton({ Name = name, Callback = function() pcall(fn) end })
+-- إضافة أزرار تبويب لاست
+local function addButton(name,fn)
+    LastTab:AddButton({ Name=name, Callback=function() pcall(fn) end })
 end
 
 addButton("AntiAFK (Toggle)", function() if state.antiafk then disableAntiafk() else enableAntiafk() end end)
@@ -340,30 +286,25 @@ addButton("autokeypress W x26", function() autokey_w(26) end)
 addButton("تحرك تلقائي", function() if state.autoMove then stopAutoMove() else startAutoMove() end end)
 addButton("قفز + اختفاء", function() jumpAndVanish(6) end)
 
--- ====== Pressure / Perf Tab (as before) ======
+-- ===== تبويب ضغط / تحسين الأداء =====
 local PressureTab = Window:MakeTab({
     Name = "ضغط / تحسين الأداء",
     Icon = "rbxassetid://6035027362",
     PremiumOnly = false
 })
+
 PressureTab:AddButton({ Name = "تشغيل سكربت AL7FRAA-MADARAxCATAY", Callback = function()
-    safeLoadURL("https://raw.githubusercontent.com/MADARA9223/AL7FRAA-MADARAxCATAY/refs/heads/main/AL7FRAA%20%7C%20MADARAxCATAYxROBERTO")
+    pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/MADARA9223/AL7FRAA-MADARAxCATAY/refs/heads/main/AL7FRAA%20%7C%20MADARAxCATAYxROBERTO"))() end)
+    OrionLib:MakeNotification({Name="تم التشغيل", Content="AL7FRAA-MADARAxCATAY شغال", Image="rbxassetid://4483345998", Time=3})
 end })
 
+-- إشعار جاهزية الواجهة
 OrionLib:MakeNotification({
     Name = "جاهز",
     Content = "واجهة لاست تم إنشاؤها",
     Image = "rbxassetid://4483345998",
     Time = 4
 })
-
--- ====== TrueFly + Watch + Ping GUI (integrated) ======
--- We'll create a Frame GUI that can be shown via tools tab too
-local function createFlyGui()
-    -- parent under PlayerGui
-    if playerGui:FindFirstChild("Last_TrueFly_Watch") then
-        return playerGui:FindFirstChild("Last_TrueFly_Watch")
-    end
 
     local gui = Instance.new("ScreenGui")
     gui.Name = "Last_TrueFly_Watch"
