@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local PlayersService = game:GetService("Players")
 
 -- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
@@ -121,7 +120,6 @@ for i = 1,4 do
 			if string.sub(string.lower(p.Name),1,#input) == string.lower(input) then
 				data[i].player = p
 				data[i].startTime = tick()
-				-- رابط الصورة (Avatar)
 				local userId = p.UserId
 				avatar.Image = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
 				break
@@ -130,7 +128,30 @@ for i = 1,4 do
 	end)
 end
 
--- تحديث الوقت
+-- إشعار يمين الشاشة
+local function notifyRight(name)
+	local notif = Instance.new("Frame", gui)
+	notif.Size = UDim2.new(0, 180, 0, 40)
+	notif.Position = UDim2.new(1, -190, 0.2, 0) -- يمين الشاشة
+	notif.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	notif.BorderSizePixel = 0
+	notif.ClipsDescendants = true
+
+	local text = Instance.new("TextLabel", notif)
+	text.Size = UDim2.new(1,0,1,0)
+	text.BackgroundTransparency = 1
+	text.TextColor3 = Color3.new(1,1,1)
+	text.TextScaled = true
+	text.Text = "⚠️ "..name.." طلع"
+
+	notif:TweenPosition(UDim2.new(1, -190, 0.2, 0), "Out", "Quad", 0, true) -- ثابت مكانه
+	task.spawn(function()
+		wait(3)
+		notif:Destroy()
+	end)
+end
+
+-- تحديث الوقت والخروج
 task.spawn(function()
 	while true do
 		for i=1,4 do
@@ -149,6 +170,7 @@ task.spawn(function()
 				else
 					labels[i].Text = "خرج 1"
 					avatars[i].Image = ""
+					notifyRight(d.player.Name) -- يظهر الإشعار يمين الشاشة
 					d.player = nil
 				end
 			end
